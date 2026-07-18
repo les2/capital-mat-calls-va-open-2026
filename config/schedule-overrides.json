@@ -1,0 +1,20 @@
+{
+  "academyAliases": ["Capital Jiu-Jitsu", "Capital MMA"],
+  "minimumEntries": 5,
+  "maximumDropFraction": 0.35,
+  "specialAthletes": [
+    {
+      "canonicalName": "Chad Andre Malone",
+      "aliases": ["Chad Andre Malone", "Chad Malone"],
+      "alwaysIncludeWhenFound": true,
+      "capitalNote": "Capital athlete · alternate black-belt school"
+    },
+    {
+      "canonicalName": "Nicholas Jay",
+      "aliases": ["Nicholas Jay", "Nick Jay"],
+      "alwaysIncludeWhenFound": true,
+      "watchOnlyWhenMissing": true,
+      "capitalNote": "Capital athlete · alternate black-belt school"
+    }
+  ]
+}

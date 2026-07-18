@@ -1,98 +1,28 @@
-# vinext-starter
+# Capital Mat Calls
 
-A clean full-stack starter running on
-[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
-Drizzle support.
+Team schedule for Capital MMA / Capital Jiu-Jitsu athletes at the 2026 IBJJF Virginia Open.
 
-## Prerequisites
+## How updates work
 
-- Node.js `>=22.13.0`
+The website reads `public/data/schedule.json` from its own origin. The updater in `scripts/update_schedule.py` rebuilds that file from the official IBJJF athlete lists, division schedule, brackets, and single-competitor tables.
 
-## Quick Start
+It includes athletes registered under Capital MMA or Capital Jiu-Jitsu, always checks for Chad Malone and Nicholas/Nick Jay under alternate academies, and preserves the last known-good file if the scrape is incomplete or suspicious.
+
+## Run an update
 
 ```bash
-npm install
-npm run dev
-npm run build
+python3 -m pip install -r requirements-update.txt
+python3 scripts/update_schedule.py
 ```
 
-This starter does not use `wrangler.jsonc`.
+Useful checks:
 
-## Included Shape
-
-- edit site code under `app/`
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/schema.ts` starts intentionally empty
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
-
-## Workspace Auth Headers
-
-OpenAI workspace sites can read the current user's email from
-`oai-authenticated-user-email`.
-
-SIWC-authenticated workspace sites may also receive
-`oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty
-`name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by
-`oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
-
-Treat the full name as optional and fall back to email when it is absent:
-
-```tsx
-import { headers } from "next/headers";
-
-export default async function Home() {
-  const requestHeaders = await headers();
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
-
-  const displayName = fullName ?? email;
-  // ...
-}
+```bash
+python3 scripts/update_schedule.py --dry-run
+python3 scripts/update_schedule.py --validate-only
+npm test
 ```
 
-## Optional Dispatch-Owned ChatGPT Sign-In
+Edit `config/schedule-overrides.json` to add academy aliases or special athletes. A GitHub Actions workflow in `.github/workflows/update-schedule.yml` is ready to run every 15 minutes and commits only verified changes.
 
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs
-optional or required ChatGPT sign-in:
-
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send
-  anonymous visitors through Sign in with ChatGPT.
-- Use `chatGPTSignInPath(returnTo)` and `chatGPTSignOutPath(returnTo)` for
-  browser links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in
-  or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because
-  they depend on per-request identity headers.
-
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the
-OAuth cookies, and identity header injection. Do not implement app routes for
-those reserved paths. Routes that do not import and call the helper remain
-anonymous-compatible.
-
-SIWC establishes identity only; it does not prove workspace membership. Use the
-Sites hosting platform's access policy controls for workspace-wide restrictions,
-or enforce explicit server-side membership or allowlist checks.
-
-Use SIWC for account pages, user-specific dashboards, saved records, and write
-actions tied to the current ChatGPT user. Leave public content anonymous.
-
-## Useful Commands
-
-- `npm run dev`: start local development
-- `npm run build`: verify the vinext build output
-- `npm test`: build the starter and verify its rendered loading skeleton
-- `npm run db:generate`: generate Drizzle migrations after schema changes
-
-## Learn More
-
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+The `.ics` downloads are generated in the browser from the same current JSON data, so both the combined calendar and individual athlete calendar files stay in sync with the page.

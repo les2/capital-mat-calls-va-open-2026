@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import initialSchedule from "../public/data/schedule.json";
 
 type Entry = {
   id: string;
@@ -11,7 +12,7 @@ type Entry = {
   age: string;
   gender: string;
   weight: string;
-  date: "2026-07-18" | "2026-07-19";
+  date: string;
   time: string;
   sortMinutes: number;
   arrival: string;
@@ -19,31 +20,24 @@ type Entry = {
   bout: string;
   opponent: string;
   bracketUrl: string;
+  scheduleStatus: "scheduled" | "single" | "pending";
+  capitalNote?: string;
   single?: boolean;
 };
 
-const VENUE = "Fredericksburg Convention Center — Hall A + B";
-const ADDRESS = "2371 Carl D Silver Pkwy, Fredericksburg, VA 22401";
-const GI_EVENT = "https://ibjjf.com/events/virginia-international-open-ibjjf-jiu-jitsu-championship-2026";
-const NOGI_EVENT = "https://ibjjf.com/events/virginia-international-open-ibjjf-jiu-jitsu-no-gi-championship-2026";
+type ScheduleData = {
+  schemaVersion: number;
+  updatedAt: string;
+  title: string;
+  timezone: string;
+  venue: { name: string; address: string };
+  events: Record<"Gi" | "No-Gi", { eventId: number; url: string; scheduleUrl: string }>;
+  days: { date: string; eyebrow: string; label: string }[];
+  watchList: { canonicalName: string; aliases: string[]; found: boolean; message: string }[];
+  entries: Entry[];
+};
 
-const entries: Entry[] = [
-  { id: "gi-rex", athlete: "Rex Jinha Kim", event: "Gi", school: "Capital Jiu-Jitsu", belt: "Blue", age: "Master 2", gender: "Male", weight: "Light · 168 lb", date: "2026-07-18", time: "1:21 PM", sortMinutes: 801, arrival: "12:21 PM", mat: "Mat 4", bout: "Fight 30", opponent: "Battelmen Batchuluun", bracketUrl: "https://www.bjjcompsystem.com/tournaments/3231/categories/2887048" },
-  { id: "gi-jessica", athlete: "Jessica Elaine Simon", event: "Gi", school: "Capital Jiu-Jitsu", belt: "Blue", age: "Master 2", gender: "Female", weight: "Medium Heavy · 163.6 lb", date: "2026-07-18", time: "2:20 PM", sortMinutes: 860, arrival: "1:20 PM", mat: "Mat 6", bout: "Fight 40", opponent: "Alyssa Nicole Barcenas", bracketUrl: "https://www.bjjcompsystem.com/tournaments/3231/categories/2887103" },
-  { id: "gi-diana", athlete: "Diana Bowen", event: "Gi", school: "Capital Jiu-Jitsu", belt: "Blue", age: "Master 2", gender: "Female", weight: "Heavy · 175 lb", date: "2026-07-18", time: "2:47 PM", sortMinutes: 887, arrival: "1:47 PM", mat: "Mat 2", bout: "Fight 43", opponent: "Jacqueline Nicole Knox", bracketUrl: "https://www.bjjcompsystem.com/tournaments/3231/categories/2887108" },
-  { id: "gi-bardia", athlete: "Bardia Golkar", event: "Gi", school: "Capital Jiu-Jitsu", belt: "Purple", age: "Master 2", gender: "Male", weight: "Super Heavy · 222 lb", date: "2026-07-18", time: "2:55 PM", sortMinutes: 895, arrival: "1:55 PM", mat: "Mat 6", bout: "Fight 45", opponent: "Ryan Patrick Kelly", bracketUrl: "https://www.bjjcompsystem.com/tournaments/3231/categories/2887069" },
-  { id: "gi-christian", athlete: "Christian Marlon Platon", event: "Gi", school: "Capital Jiu-Jitsu", belt: "Purple", age: "Master 2", gender: "Male", weight: "Medium Heavy · 195 lb", date: "2026-07-18", time: "3:46 PM", sortMinutes: 946, arrival: "2:46 PM", mat: "Mat 5", bout: "Fight 50", opponent: "Robert Vincent Barcos", bracketUrl: "https://www.bjjcompsystem.com/tournaments/3231/categories/2887059" },
-  { id: "gi-lloyd", athlete: "Lloyd E Smith II", event: "Gi", school: "Capital Jiu-Jitsu", belt: "Purple", age: "Master 3", gender: "Male", weight: "Light · 168 lb", date: "2026-07-18", time: "3:52 PM", sortMinutes: 952, arrival: "2:52 PM", mat: "Mat 1", bout: "Fight 45", opponent: "Paulo Gujef Junior", bracketUrl: "https://www.bjjcompsystem.com/tournaments/3231/categories/2887134" },
-  { id: "gi-paul", athlete: "Paul Constantin Raduca", event: "Gi", school: "Capital Jiu-Jitsu", belt: "White", age: "Adult", gender: "Male", weight: "Light · 168 lb", date: "2026-07-19", time: "12:22 PM", sortMinutes: 742, arrival: "11:22 AM", mat: "Mat 2", bout: "Fight 2", opponent: "Elliot Allan Simpson", bracketUrl: "https://www.bjjcompsystem.com/tournaments/3231/categories/2886877" },
-  { id: "nogi-chad", athlete: "Chad Andre Malone", event: "No-Gi", school: "Chapel Hill Team Roc", belt: "Black", age: "Master 3", gender: "Male", weight: "Super Heavy · 215 lb", date: "2026-07-19", time: "1:52 PM", sortMinutes: 832, arrival: "12:52 PM", mat: "Mat 8", bout: "Fight 2", opponent: "Brad Alan Pearson", bracketUrl: "https://www.bjjcompsystem.com/tournaments/3232/categories/2887866" },
-  { id: "nogi-bion", athlete: "Bion Kim", event: "No-Gi", school: "Capital MMA", belt: "Purple", age: "Master 5", gender: "Male", weight: "Light Feather · 136 lb", date: "2026-07-19", time: "3:32 PM", sortMinutes: 932, arrival: "2:32 PM", mat: "Single Bracket Table", bout: "Report by", opponent: "Single-athlete division", bracketUrl: "https://www.bjjcompsystem.com/tournaments/3232/single_competitors", single: true },
-  { id: "nogi-diana", athlete: "Diana Bowen", event: "No-Gi", school: "Capital Jiu-Jitsu", belt: "Blue", age: "Master 2", gender: "Female", weight: "Heavy · 169 lb", date: "2026-07-19", time: "4:13 PM", sortMinutes: 973, arrival: "3:13 PM", mat: "Mat 1", bout: "Fight 15", opponent: "Jacqueline Nicole Knox", bracketUrl: "https://www.bjjcompsystem.com/tournaments/3232/categories/2887827" },
-];
-
-const days = [
-  { date: "2026-07-18", eyebrow: "Saturday · Gi", label: "July 18" },
-  { date: "2026-07-19", eyebrow: "Sunday · Gi + No-Gi", label: "July 19" },
-] as const;
+const fallbackSchedule = initialSchedule as ScheduleData;
 
 function pad(value: number) {
   return String(value).padStart(2, "0");
@@ -59,8 +53,8 @@ function icsEscape(value: string) {
   return value.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
 }
 
-function eventToIcs(entry: Entry) {
-  const source = entry.event === "Gi" ? GI_EVENT : NOGI_EVENT;
+function eventToIcs(entry: Entry, data: ScheduleData) {
+  const source = data.events[entry.event].url;
   const summary = entry.single ? `${entry.athlete} · Single bracket check-in` : `${entry.athlete} · ${entry.event} first bout`;
   const description = [
     `${entry.belt} / ${entry.age} / ${entry.gender} / ${entry.weight}`,
@@ -77,7 +71,7 @@ function eventToIcs(entry: Entry) {
     `DTSTART;TZID=America/New_York:${localStamp(entry)}`,
     `DTEND;TZID=America/New_York:${localStamp(entry, entry.single ? 15 : 30)}`,
     `SUMMARY:${icsEscape(summary)}`,
-    `LOCATION:${icsEscape(`${VENUE}, ${ADDRESS}`)}`,
+    `LOCATION:${icsEscape(`${data.venue.name}, ${data.venue.address}`)}`,
     `DESCRIPTION:${icsEscape(description)}`,
     `URL:${entry.bracketUrl}`,
     "BEGIN:VALARM",
@@ -89,7 +83,7 @@ function eventToIcs(entry: Entry) {
   ].join("\r\n");
 }
 
-function makeIcs(items: Entry[]) {
+function makeIcs(items: Entry[], data: ScheduleData) {
   return [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
@@ -97,14 +91,14 @@ function makeIcs(items: Entry[]) {
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     "X-WR-CALNAME:Capital · Virginia Open 2026",
-    "X-WR-TIMEZONE:America/New_York",
-    ...items.map(eventToIcs),
+    `X-WR-TIMEZONE:${data.timezone}`,
+    ...items.map((entry) => eventToIcs(entry, data)),
     "END:VCALENDAR",
   ].join("\r\n");
 }
 
-function downloadCalendar(items: Entry[], name: string) {
-  const blob = new Blob([makeIcs(items)], { type: "text/calendar;charset=utf-8" });
+function downloadCalendar(items: Entry[], name: string, data: ScheduleData) {
+  const blob = new Blob([makeIcs(items, data)], { type: "text/calendar;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
@@ -117,9 +111,25 @@ function downloadCalendar(items: Entry[], name: string) {
 
 export default function Home() {
   const [filter, setFilter] = useState<"All" | "Gi" | "No-Gi">("All");
+  const [data, setData] = useState<ScheduleData>(fallbackSchedule);
+  useEffect(() => {
+    fetch("/data/schedule.json", { cache: "no-store" })
+      .then((response) => {
+        if (!response.ok) throw new Error(`Schedule request failed: ${response.status}`);
+        return response.json() as Promise<ScheduleData>;
+      })
+      .then(setData)
+      .catch(() => undefined);
+  }, []);
+  const entries = data.entries;
+  const days = data.days;
+  const uniqueAthletes = new Set(entries.map((entry) => entry.athlete)).size;
+  const firstEntry = [...entries].sort((a, b) => a.date.localeCompare(b.date) || a.sortMinutes - b.sortMinutes)[0];
+  const updatedLabel = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: data.timezone }).format(new Date(data.updatedAt));
+  const nick = data.watchList.find((item) => item.canonicalName === "Nicholas Jay");
   const visible = useMemo(
     () => entries.filter((entry) => filter === "All" || entry.event === filter),
-    [filter],
+    [entries, filter],
   );
 
   return (
@@ -134,7 +144,7 @@ export default function Home() {
             <a href="#schedule">Schedule</a>
             <a href="#roster">Roster</a>
           </div>
-          <button className="download-button compact" onClick={() => downloadCalendar(entries, "capital-virginia-open-2026.ics")}>
+          <button className="download-button compact" onClick={() => downloadCalendar(entries, "capital-virginia-open-2026.ics", data)}>
             Download .ics <span aria-hidden="true">↓</span>
           </button>
         </nav>
@@ -145,20 +155,20 @@ export default function Home() {
             <h1>Every Capital<br /><em>mat call.</em></h1>
             <p className="hero-deck">One clean schedule for Capital MMA and Capital Jiu-Jitsu competitors across the Gi and No-Gi weekends.</p>
             <div className="hero-actions">
-              <button className="download-button" onClick={() => downloadCalendar(entries, "capital-virginia-open-2026.ics")}>Add all to calendar <span aria-hidden="true">↘</span></button>
+              <button className="download-button" onClick={() => downloadCalendar(entries, "capital-virginia-open-2026.ics", data)}>Add all to calendar <span aria-hidden="true">↘</span></button>
               <a className="text-link" href="#schedule">View the timeline <span aria-hidden="true">↓</span></a>
             </div>
           </div>
           <aside className="hero-card" aria-label="Event at a glance">
             <p className="card-label">Event at a glance</p>
-            <div className="big-number">9</div>
+            <div className="big-number">{uniqueAthletes}</div>
             <p className="big-number-label">unique Capital athletes</p>
             <dl>
-              <div><dt>Entries</dt><dd>10</dd></div>
-              <div><dt>Days</dt><dd>2</dd></div>
-              <div><dt>First call</dt><dd>Sat · 1:21 PM</dd></div>
+              <div><dt>Entries</dt><dd>{entries.length}</dd></div>
+              <div><dt>Days</dt><dd>{days.length}</dd></div>
+              <div><dt>First call</dt><dd>{firstEntry ? `${firstEntry.date === "2026-07-18" ? "Sat" : "Sun"} · ${firstEntry.time}` : "Pending"}</dd></div>
             </dl>
-            <div className="venue-line"><span aria-hidden="true">⌖</span><p>{VENUE}<small>Fredericksburg, Virginia</small></p></div>
+            <div className="venue-line"><span aria-hidden="true">⌖</span><p>{data.venue.name}<small>Fredericksburg, Virginia</small></p></div>
           </aside>
         </div>
       </section>
@@ -203,7 +213,7 @@ export default function Home() {
                         </div>
                         <div className="card-actions">
                           <a href={entry.bracketUrl} target="_blank" rel="noreferrer">{entry.single ? "Single bracket list" : "Open bracket"} ↗</a>
-                          <button onClick={() => downloadCalendar([entry], `${entry.id}-virginia-open-2026.ics`)}>Add to calendar</button>
+                          <button onClick={() => downloadCalendar([entry], `${entry.id}-virginia-open-2026.ics`, data)}>Add to calendar</button>
                         </div>
                       </div>
                     </div>
@@ -218,7 +228,7 @@ export default function Home() {
       <section className="roster-section" id="roster">
         <div className="section-heading light">
           <div><p className="section-number">02 · Registration check</p><h2>Capital roster</h2></div>
-          <p className="verified">Verified against IBJJF athlete lists and live brackets · Jul 17, 2026</p>
+          <p className="verified">Verified against IBJJF athlete lists and live brackets · {updatedLabel}</p>
         </div>
         <div className="table-wrap">
           <table>
@@ -229,7 +239,7 @@ export default function Home() {
                   <td><strong>{entry.athlete}</strong></td>
                   <td><span className={`event-pill ${entry.event === "No-Gi" ? "nogi-pill" : ""}`}>{entry.event}</span></td>
                   <td>{entry.belt} · {entry.age} · {entry.gender}<small>{entry.weight}</small></td>
-                  <td>{entry.school}{entry.athlete.startsWith("Chad") && <small className="capital-note">Capital athlete · alternate black-belt school</small>}</td>
+                  <td>{entry.school}{entry.capitalNote && <small className="capital-note">{entry.capitalNote}</small>}</td>
                   <td>{entry.date === "2026-07-18" ? "Sat" : "Sun"} · {entry.time}<small>{entry.mat}</small></td>
                 </tr>
               ))}
@@ -238,14 +248,14 @@ export default function Home() {
         </div>
         <div className="nick-note">
           <div className="search-icon" aria-hidden="true">N?</div>
-          <div><strong>Nicholas “Nick” Jay</strong><p>No Nick or Nicholas Jay appears in either the Gi or No-Gi athlete list as of July 17, 2026.</p></div>
+          <div><strong>Nicholas “Nick” Jay</strong><p>{nick?.message ?? "Nicholas Jay watch is active."} Checked {updatedLabel}.</p></div>
         </div>
       </section>
 
       <footer>
         <div><span className="brand-mark">C</span><strong>Capital Mat Calls</strong></div>
         <p>Unofficial team companion. Estimated times can change—follow the official bullpen screens.</p>
-        <div className="source-links"><a href={GI_EVENT} target="_blank" rel="noreferrer">Gi event ↗</a><a href={NOGI_EVENT} target="_blank" rel="noreferrer">No-Gi event ↗</a></div>
+        <div className="source-links"><a href={data.events.Gi.url} target="_blank" rel="noreferrer">Gi event ↗</a><a href={data.events["No-Gi"].url} target="_blank" rel="noreferrer">No-Gi event ↗</a></div>
       </footer>
     </main>
   );
