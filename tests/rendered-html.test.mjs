@@ -22,11 +22,16 @@ test("schedule data is complete and safe to publish", async () => {
 });
 
 test("site loads the same-origin schedule and generates calendars from it", async () => {
-  const page = await readFile(new URL("app/page.tsx", root), "utf8");
+  const [page, route] = await Promise.all([
+    readFile(new URL("app/page.tsx", root), "utf8"),
+    readFile(new URL("app/api/schedule/route.ts", root), "utf8"),
+  ]);
 
-  assert.match(page, /fetch\("\/data\/schedule\.json", \{ cache: "no-store" \}\)/);
+  assert.match(page, /fetch\("\/api\/schedule", \{ cache: "no-store" \}\)/);
   assert.match(page, /text\/calendar;charset=utf-8/);
   assert.match(page, /X-WR-TIMEZONE:\$\{data\.timezone\}/);
   assert.match(page, /data\.watchList\.find/);
   assert.doesNotMatch(page, /const entries: Entry\[\] = \[/);
+  assert.match(route, /raw\.githubusercontent\.com\/les2\/capital-mat-calls-va-open-2026\/main/);
+  assert.match(route, /"Cache-Control": "no-store, max-age=0"/);
 });

@@ -113,7 +113,7 @@ export default function Home() {
   const [filter, setFilter] = useState<"All" | "Gi" | "No-Gi">("All");
   const [data, setData] = useState<ScheduleData>(fallbackSchedule);
   useEffect(() => {
-    fetch("/data/schedule.json", { cache: "no-store" })
+    fetch("/api/schedule", { cache: "no-store" })
       .then((response) => {
         if (!response.ok) throw new Error(`Schedule request failed: ${response.status}`);
         return response.json() as Promise<ScheduleData>;
