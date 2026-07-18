@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-18T18:34:27+00:00",
+  "updatedAt": "2026-07-18T19:49:22+00:00",
   "title": "Capital Mat Calls · Virginia Open 2026",
   "timezone": "America/New_York",
   "venue": {
@@ -133,7 +133,7 @@
       "sortMinutes": 879,
       "arrival": "1:39 PM",
       "mat": "Mat 6",
-      "bout": "Fight 45",
+      "bout": "Fight 46",
       "opponent": "Ryan Patrick Kelly",
       "bracketUrl": "https://www.bjjcompsystem.com/tournaments/3231/categories/2887069",
       "scheduleStatus": "scheduled"
@@ -152,7 +152,7 @@
       "sortMinutes": 911,
       "arrival": "2:11 PM",
       "mat": "Mat 5",
-      "bout": "Fight 50",
+      "bout": "Fight 48",
       "opponent": "Robert Vincent Barcos",
       "bracketUrl": "https://www.bjjcompsystem.com/tournaments/3231/categories/2887059",
       "scheduleStatus": "scheduled"
